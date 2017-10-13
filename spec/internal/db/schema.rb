@@ -2,7 +2,19 @@ ActiveRecord::Schema.define do
   enable_extension "uuid-ossp"
   enable_extension "pgcrypto"
 
+  create_table :foos do |t|
+    t.belongs_to :bigint_date_range
+    t.belongs_to :bigint_custom_id_int_range
+    t.belongs_to :uuid_string_range
+    t.belongs_to :bigint_boolean_list
+    t.belongs_to :bigint_custom_id_int_list
+    t.belongs_to :uuid_string_list
+  end
+
+  create_table :bars
+
   create_range_partition :bigint_date_ranges, partition_key: "created_at::date" do |t|
+    t.belongs_to :bar, index: false
     t.timestamps null: false
   end
 
@@ -20,6 +32,7 @@ ActiveRecord::Schema.define do
 
   create_range_partition :bigint_custom_id_int_ranges, primary_key: :some_id, partition_key: :some_int do |t|
     t.integer :some_int, null: false
+    t.belongs_to :bar, index: false
   end
 
   create_range_partition_of :bigint_custom_id_int_ranges,
@@ -38,6 +51,7 @@ ActiveRecord::Schema.define do
 
   create_range_partition :uuid_string_ranges, id: :uuid, partition_key: :some_string do |t|
     t.text :some_string, null: false
+    t.belongs_to :bar, index: false
   end
 
   create_range_partition_of :uuid_string_ranges,
@@ -54,6 +68,7 @@ ActiveRecord::Schema.define do
 
   create_list_partition :bigint_boolean_lists, partition_key: :some_bool do |t|
     t.boolean :some_bool, default: true, null: false
+    t.belongs_to :bar, index: false
   end
 
   create_list_partition_of :bigint_boolean_lists,
@@ -68,6 +83,7 @@ ActiveRecord::Schema.define do
 
   create_list_partition :bigint_custom_id_int_lists, primary_key: :some_id, partition_key: :some_int do |t|
     t.integer :some_int, null: false
+    t.belongs_to :bar, index: false
   end
 
   create_list_partition_of :bigint_custom_id_int_lists,
@@ -84,6 +100,7 @@ ActiveRecord::Schema.define do
 
   create_list_partition :uuid_string_lists, id: :uuid, partition_key: :some_string do |t|
     t.text :some_string, null: false
+    t.belongs_to :bar, index: false
   end
 
   create_list_partition_of :uuid_string_lists,
