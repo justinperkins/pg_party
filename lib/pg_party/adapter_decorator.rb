@@ -18,27 +18,23 @@ module PgParty
     end
 
     def create_range_partition_of(table_name, start_range:, end_range:, **options)
-      if options[:name]
-        child_table_name = options[:name]
-      else
-        child_table_name = hashed_table_name(table_name, "#{start_range}#{end_range}")
-      end
-
       constraint_clause = "FROM (#{quote(start_range)}) TO (#{quote(end_range)})"
 
-      create_partition_of(table_name, child_table_name, constraint_clause, **options)
+      create_partition_of(table_name, constraint_clause, **options)
     end
 
     def create_list_partition_of(table_name, values:, **options)
-      if options[:name]
-        child_table_name = options[:name]
-      else
-        child_table_name = hashed_table_name(table_name, values.to_s)
-      end
-
       constraint_clause = "IN (#{Array.wrap(values).map(&method(:quote)).join(",")})"
 
-      create_partition_of(table_name, child_table_name, constraint_clause, **options)
+      create_partition_of(table_name, constraint_clause, **options)
+    end
+
+    def create_table_like(table_name, new_table_name)
+      execute(<<-SQL)
+        CREATE TABLE #{quote_table_name(new_table_name)} (
+          LIKE #{quote_table_name(table_name)} INCLUDING ALL
+        )
+      SQL
     end
 
     def attach_range_partition(parent_table_name, child_table_name, start_range:, end_range:)
@@ -98,10 +94,11 @@ module PgParty
       result
     end
 
-    def create_partition_of(table_name, child_table_name, constraint_clause, **options)
-      primary_key   = options.fetch(:primary_key, :id)
-      index         = options.fetch(:index, true)
-      partition_key = options[:partition_key]
+    def create_partition_of(table_name, constraint_clause, **options)
+      primary_key      = options.fetch(:primary_key, :id)
+      index            = options.fetch(:index, true)
+      child_table_name = options.fetch(:name, hashed_table_name(table_name, constraint_clause))
+      partition_key    = options[:partition_key]
 
       raise ArgumentError, "composite primary key not supported" if primary_key.is_a?(Array)
 
